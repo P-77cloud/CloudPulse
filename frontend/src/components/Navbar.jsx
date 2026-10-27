@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Bell, Plus, RefreshCw, Sparkles, ShieldCheck } from 'lucide-react';
+import { Activity, Bell, Plus, RefreshCw, Sparkles, RotateCcw } from 'lucide-react';
 
 export default function Navbar({
   unreadCount,
@@ -7,8 +7,11 @@ export default function Navbar({
   onOpenAddService,
   onRefresh,
   onSeedDemo,
+  onResetDemo,
+  hasDemoService,
   isRefreshing,
-  isSeeding
+  isSeeding,
+  isResetting
 }) {
   return (
     <header className="navbar">
@@ -40,15 +43,29 @@ export default function Navbar({
             <span>Refresh</span>
           </button>
 
+          {hasDemoService && (
+            <button
+              className="btn btn-secondary"
+              onClick={onResetDemo}
+              disabled={isResetting}
+              title="Purge all records marked [DEMO] (keeps real endpoints untouched)"
+              id="btn-reset-demo"
+              style={{ color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+            >
+              <RotateCcw size={15} className={isResetting ? 'spin-anim' : ''} />
+              <span>{isResetting ? 'Resetting...' : 'Reset Demo'}</span>
+            </button>
+          )}
+
           <button
             className="btn btn-demo"
             onClick={onSeedDemo}
             disabled={isSeeding}
-            title="Seed sample outage and alerts (clearly labeled [DEMO])"
+            title="Seed single canonical sample outage and alerts (idempotent)"
             id="btn-seed-demo"
           >
             <Sparkles size={15} />
-            <span>{isSeeding ? 'Seeding...' : 'Seed Demo Outage'}</span>
+            <span>{isSeeding ? 'Seeding...' : hasDemoService ? 'Re-seed Demo' : 'Seed Demo Outage'}</span>
           </button>
 
           <button

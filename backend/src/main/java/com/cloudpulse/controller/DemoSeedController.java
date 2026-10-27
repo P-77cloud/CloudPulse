@@ -22,4 +22,10 @@ public class DemoSeedController {
         seedDataService.seedDemoData();
         return ResponseEntity.ok(ApiResponse.ok("Demo data successfully seeded for evaluation.", "DEMO_SEEDED"));
     }
+
+    @PostMapping("/reset")
+    public ResponseEntity<ApiResponse<String>> resetDemoData() {
+        seedDataService.resetDemoData();
+        return ResponseEntity.ok(ApiResponse.ok("Demo data successfully reset. All [DEMO] items purged.", "DEMO_RESET"));
+    }
 }

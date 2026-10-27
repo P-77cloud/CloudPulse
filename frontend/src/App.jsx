@@ -41,8 +41,11 @@ export default function App() {
   // Loading States & Error
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [checkingServiceId, setCheckingServiceId] = useState(null);
   const [connectionError, setConnectionError] = useState(null);
+
+  const hasDemoService = services.some(s => s.name && s.name.includes('[DEMO]'));
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -91,6 +94,24 @@ export default function App() {
       alert(`Demo seed failed: ${err.message}`);
     } finally {
       setIsSeeding(false);
+    }
+  };
+
+  const handleResetDemo = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to reset demo data?\n\nThis will safely purge only records explicitly marked as [DEMO] (services, test metrics, demo incidents, and alerts). Real monitored services will remain untouched."
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsResetting(true);
+      await api.resetDemoData();
+      await fetchDashboardData();
+      setActiveTab('overview');
+    } catch (err) {
+      alert(`Demo reset failed: ${err.message}`);
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -192,8 +213,11 @@ export default function App() {
         onOpenAddService={openAddModal}
         onRefresh={handleRefresh}
         onSeedDemo={handleSeedDemo}
+        onResetDemo={handleResetDemo}
+        hasDemoService={hasDemoService}
         isRefreshing={isRefreshing}
         isSeeding={isSeeding}
+        isResetting={isResetting}
       />
 
       <main className="app-container">

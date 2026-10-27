@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class SeedDataService implements CommandLineRunner {
@@ -86,11 +88,48 @@ public class SeedDataService implements CommandLineRunner {
     }
 
     /**
-     * Seeds labeled demo data for evaluation / viva demonstration.
-     * Clearly labeled as [DEMO DATA] to adhere to project requirements.
+     * Resets and purges all records strictly tagged with [DEMO].
+     * Never removes or alters real monitored endpoints or real metrics.
      */
-    public void seedDemoData() {
-        log.info("Seeding explicitly labeled DEMO data for demonstration purposes...");
+    public synchronized void resetDemoData() {
+        log.info("Resetting demo data: purging all records marked [DEMO]...");
+
+        // 1. Find all demo services
+        List<MonitoredService> allServices = serviceRepository.findAll();
+        List<MonitoredService> demoServices = allServices.stream()
+                .filter(s -> s.getName() != null && s.getName().contains("[DEMO]"))
+                .collect(Collectors.toList());
+
+        for (MonitoredService demoSvc : demoServices) {
+            healthCheckRepository.deleteByServiceId(demoSvc.getId());
+            incidentRepository.deleteByServiceId(demoSvc.getId());
+            notificationRepository.deleteByServiceId(demoSvc.getId());
+            alertRuleRepository.deleteByServiceId(demoSvc.getId());
+            serviceRepository.deleteById(demoSvc.getId());
+        }
+
+        // Clean any stray incidents with [DEMO] in title
+        incidentRepository.findAll().stream()
+                .filter(inc -> inc.getTitle() != null && inc.getTitle().contains("[DEMO]"))
+                .forEach(inc -> incidentRepository.deleteById(inc.getId()));
+
+        // Clean any stray notifications with [DEMO] in title
+        notificationRepository.findAll().stream()
+                .filter(n -> n.getTitle() != null && n.getTitle().contains("[DEMO]"))
+                .forEach(n -> notificationRepository.deleteById(n.getId()));
+
+        log.info("Demo data reset completed. All [DEMO] records cleanly removed.");
+    }
+
+    /**
+     * Seeds labeled demo data for evaluation / viva demonstration.
+     * IDEMPOTENT: First cleans any prior demo records so duplicate services are never created.
+     */
+    public synchronized void seedDemoData() {
+        // First ensure idempotency: clean up existing demo records
+        resetDemoData();
+
+        log.info("Seeding single canonical DEMO Payment Gateway for outage demonstration...");
 
         MonitoredService demoService = new MonitoredService(
                 "[DEMO] Payment Gateway Service",
@@ -107,7 +146,7 @@ public class SeedDataService implements CommandLineRunner {
         demoService.setUptimePercentage(94.2);
         MonitoredService savedService = serviceRepository.save(demoService);
 
-        // Add demo health check records
+        // Add 10 demo health check records
         for (int i = 10; i >= 1; i--) {
             boolean success = i > 4;
             HealthCheck hc = new HealthCheck(
@@ -147,6 +186,6 @@ public class SeedDataService implements CommandLineRunner {
         );
         notificationRepository.save(notif);
 
-        log.info("Labeled DEMO data successfully seeded.");
+        log.info("Canonical DEMO scenario successfully seeded.");
     }
 }

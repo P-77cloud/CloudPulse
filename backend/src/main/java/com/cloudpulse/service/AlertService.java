@@ -58,7 +58,7 @@ public class AlertService {
                     break;
 
                 case CONSECUTIVE_FAILURES:
-                    if (service.getConsecutiveFailures() >= (int) rule.getThreshold()) {
+                    if (service.getConsecutiveFailures() == (int) rule.getThreshold()) {
                         createNotification(
                                 service.getId(),
                                 service.getName(),
@@ -72,13 +72,13 @@ public class AlertService {
                     break;
 
                 case STATUS_DOWN:
-                    if (check.getStatus() == ServiceStatus.DOWN) {
+                    if (check.getStatus() == ServiceStatus.DOWN && service.getConsecutiveFailures() == 1) {
                         createNotification(
                                 service.getId(),
                                 service.getName(),
                                 null,
                                 "Service Down Alert: " + service.getName(),
-                                "Service '" + service.getName() + "' is currently DOWN (" + check.getErrorMessage() + ")",
+                                "Service '" + service.getName() + "' transitioned to DOWN (" + (check.getErrorMessage() != null ? check.getErrorMessage() : "Probe failed") + ")",
                                 IncidentSeverity.CRITICAL
                         );
                     }

@@ -89,8 +89,11 @@ export const api = {
     method: 'POST',
   }),
 
-  // Demo Seed
+  // Demo Seed & Reset
   seedDemoData: () => request('/demo/seed', {
+    method: 'POST',
+  }),
+  resetDemoData: () => request('/demo/reset', {
     method: 'POST',
   }),
 };
