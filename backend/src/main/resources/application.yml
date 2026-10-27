@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: cloudpulse-backend
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/cloudpulse}
+      auto-index-creation: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# CloudPulse Platform Configuration
+cloudpulse:
+  scheduler:
+    enabled: ${CLOUDPULSE_SCHEDULER_ENABLED:true}
+    check-interval-ms: ${CLOUDPULSE_SCHEDULER_INTERVAL_MS:15000}
+  health-check:
+    default-timeout-ms: ${CLOUDPULSE_DEFAULT_TIMEOUT_MS:5000}
+    user-agent: "CloudPulse-Monitor/1.0 (+https://github.com/cloudpulse/monitor)"
+  security:
+    # SSRF Protection: when false, blocks private IP ranges, loopback, and cloud metadata (169.254.169.254)
+    allow-private-ips: ${CLOUDPULSE_SECURITY_ALLOW_PRIVATE_IPS:false}
+    allow-localhost: ${CLOUDPULSE_SECURITY_ALLOW_LOCALHOST:false}
+
+logging:
+  level:
+    com.cloudpulse: INFO
+    org.springframework.data.mongodb: INFO

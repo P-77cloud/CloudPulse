@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: cloudpulse-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: cloudpulse
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - cloudpulse-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../Dockerfile.backend
+    container_name: cloudpulse-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      SPRING_PROFILES_ACTIVE: prod
+      MONGODB_URI: mongodb://mongodb:27017/cloudpulse
+      CLOUDPULSE_SCHEDULER_ENABLED: "true"
+      CLOUDPULSE_SCHEDULER_INTERVAL_MS: 15000
+      CLOUDPULSE_SECURITY_ALLOW_PRIVATE_IPS: "false"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - cloudpulse-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../Dockerfile.frontend
+    container_name: cloudpulse-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - cloudpulse-network
+
+volumes:
+  mongo_data:
+    driver: local
+
+networks:
+  cloudpulse-network:
+    driver: bridge

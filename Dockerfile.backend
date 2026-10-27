@@ -1,0 +1,28 @@
+# CloudPulse Backend - Multi-stage Dockerfile
+# Stage 1: Build the Maven application
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS builder
+WORKDIR /app
+COPY pom.xml .
+# Download dependencies for layer caching
+RUN mvn dependency:go-offline -B
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+# Stage 2: Minimal runtime image
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+
+# Add non-root user for security
+RUN addgroup -S cloudpulse && adduser -S cloudpulse -G cloudpulse
+USER cloudpulse
+
+COPY --from=builder /app/target/cloudpulse-backend-1.0.0.jar app.jar
+
+ENV PORT=8080
+ENV SPRING_PROFILES_ACTIVE=prod
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]

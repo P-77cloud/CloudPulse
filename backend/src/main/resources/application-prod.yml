@@ -1,0 +1,19 @@
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      auto-index-creation: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+cloudpulse:
+  scheduler:
+    enabled: true
+    check-interval-ms: 30000
+  security:
+    allow-private-ips: false
+    allow-localhost: false
